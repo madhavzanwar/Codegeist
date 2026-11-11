@@ -226,5 +226,7 @@ For the Devpost gallery and video (from the live site after seeding):
 
 ## Credits
 
+Teammate handover (step-by-step completion and submission guide): [`docs/HANDOVER.pdf`](docs/HANDOVER.pdf) · source [`docs/HANDOVER.md`](docs/HANDOVER.md).
+
 Built from scratch for Codegeist 2026. Reused open source and references are listed in [`CREDITS.md`](CREDITS.md).
 License: MIT.
