@@ -18,9 +18,10 @@
     "install:ui": "npm --prefix static/app install",
     "seed": "tsx scripts/seed-demo.ts",
     "check": "npm run lint && npm run typecheck && npm run test:coverage",
-    "forge:lint": "forge lint",
+    "forge:lint": "node scripts/forge-lint-offline.cjs",
     "deploy": "npm run build:ui && forge deploy -e production",
-    "screenshots": "npm run build:ui && node scripts/screenshots.mjs"
+    "screenshots": "npm run build:ui && node scripts/screenshots.mjs",
+    "forge:lint:full": "forge lint"
   },
   "dependencies": {
     "@forge/api": "^8.5.0",

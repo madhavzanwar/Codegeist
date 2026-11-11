@@ -31,7 +31,7 @@ describe('trend', () => {
   it('appends with dedupe and cap', () => {
     let h: Snapshot[] = [];
     h = appendSnapshot(h, snap('2026-11-20T00:00:00Z', 1));
-    h = appendSnapshot(h, snap('2026-11-20T00:05:00Z', 2));
+    h = appendSnapshot(h, snap('2026-11-20T00:01:00Z', 2));
     expect(h).toHaveLength(1);
     expect(h[0]?.riskScore).toBe(2);
     for (let i = 1; i <= 40; i++) h = appendSnapshot(h, snap(`2026-11-2${Math.floor(i / 20) + 1}T${String(i % 20).padStart(2, '0')}:00:00Z`, i));

@@ -6,7 +6,8 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       provider: 'v8',
-      include: ['src/core/**/*.ts', 'src/jira/mapper.ts', 'src/jira/http.ts', 'src/seed/**/*.ts', 'src/lib/**/*.ts', 'src/twg/parse.ts'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/lib/forge.ts', 'src/index.ts'],
       reporter: ['text', 'text-summary'],
       thresholds: { lines: 85, functions: 85, branches: 75, statements: 85 },
     },

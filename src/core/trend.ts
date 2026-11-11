@@ -52,7 +52,7 @@ export function computeTrend(current: Snapshot, history: Snapshot[]): TrendRepor
 }
 
 /** Keep the most recent `max` snapshots, de-duplicating runs closer than `minGapMs` (keeps the newest). */
-export function appendSnapshot(history: Snapshot[], snap: Snapshot, max = 30, minGapMs = 10 * 60_000): Snapshot[] {
+export function appendSnapshot(history: Snapshot[], snap: Snapshot, max = 30, minGapMs = 2 * 60_000): Snapshot[] {
   const sorted = [...history].sort((a, b) => a.at.localeCompare(b.at));
   const last = sorted[sorted.length - 1];
   if (last && last.sprintId === snap.sprintId && new Date(snap.at).getTime() - new Date(last.at).getTime() < minGapMs) sorted.pop();
