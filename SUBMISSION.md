@@ -127,3 +127,18 @@ and developer/demo sites).
 Tips: *Settings → Stale after* can be lowered to 1 hour to see stale signals on freshly seeded data (staleness needs
 real elapsed time — the app never fakes timestamps). Rerunning the seeder in the same project is blocked to avoid
 duplicates; use a new Scrum project.
+
+---
+
+## Final self-review against the official rules (re-read 11 Nov 2026)
+| Rule | Status |
+|---|---|
+| Built on Forge, integrates ≥ 1 Atlassian product/capability | ✅ Jira, Confluence, Rovo, Teamwork Graph (`manifest.yml`) |
+| New project created during the submission period | ✅ repository history starts 11 Nov 2026 |
+| Original work; third-party material authorised | ✅ see `CREDITS.md` (MIT/Apache/Atlassian licences only) |
+| Installation link for judges ("Start sharing your app") | ⏳ generate after production deploy (Developer console → Distribution → Sharing) |
+| Instructions for all configuration steps | ✅ "Judge test instructions" above |
+| Demo video < 5 min, public on YouTube, no unlicensed music/trademarks | ⏳ record from `docs/DEMO_SCRIPT.md` |
+| Category + bonus prizes identified, bonus materials provided | ✅ table above; MCP `skills/skill.md`; Marketplace link ⏳ |
+| English | ✅ |
+| Marketplace prize: listing or review-ticket link | ⏳ follow `docs/MARKETPLACE.md` (separate app registration, because Marketplace-submitted apps can't use installation links) |
