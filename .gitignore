@@ -1,0 +1,11 @@
+node_modules/
+static/app/node_modules/
+static/app/build/
+coverage/
+dist/
+.env
+.env.*
+*.log
+.DS_Store
+.forge/
+static/app/build-mock/
