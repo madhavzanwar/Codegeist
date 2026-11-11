@@ -1,0 +1,397 @@
+modules:
+  # ---------------------------------------------------------------------------
+  # Rovo agent: chat-based delivery-risk copilot (Rovo Chat in Jira & Confluence)
+  # ---------------------------------------------------------------------------
+  rovo:agent:
+    - key: sprint-sentinel-agent
+      name: Sprint Sentinel
+      description: >
+        Finds delivery risk in your Jira sprint — blockers and blocker chains, stale and overdue
+        work, overloaded people, scope creep, missing acceptance criteria and unanswered
+        questions — explains every finding with evidence and a 0-100 risk score, and takes
+        confirmed actions (comment, label, flag, follow-up sub-task, Confluence risk report).
+      icon: resource:main;sentinel.svg
+      prompt: resource:agent-prompt;prompt.md
+      conversationStarters:
+        - Is our current sprint on track?
+        - What are the top 5 delivery risks right now?
+        - Who on the team is overloaded?
+        - Publish a Sprint Risk Report to Confluence
+      followUpPrompt: >
+        Suggest up to three short follow-up questions or confirmed actions the user could take
+        next, based only on the findings and suggested actions returned by Sprint Sentinel.
+      actions:
+        - analyze-sprint-risk
+        - explain-issue-risk
+        - get-assignee-load
+        - list-sprints
+        - get-risk-trend
+        - add-risk-comment
+        - add-risk-label
+        - create-followup-subtask
+        - flag-issue
+        - publish-risk-report
+      skills:
+        - sprint-risk-triage
+        - sprint-risk-remediation
+
+  # Reusable skills that any Forge Rovo agent in this app (and Rovo Studio) can load.
+  rovo:skill:
+    - key: sprint-risk-triage
+      source:
+        dir: skills/sprint-risk-triage
+      dependencies:
+        tools:
+          - analyze-sprint-risk
+          - explain-issue-risk
+          - get-assignee-load
+          - list-sprints
+          - get-risk-trend
+    - key: sprint-risk-remediation
+      source:
+        dir: skills/sprint-risk-remediation
+      dependencies:
+        tools:
+          - add-risk-comment
+          - add-risk-label
+          - flag-issue
+          - create-followup-subtask
+          - publish-risk-report
+
+  # The same actions exposed as MCP tools (Rovo Studio custom agents + external MCP clients).
+  rovo:mcp:
+    - key: sprint-sentinel-mcp
+      name: Sprint Sentinel
+      tools:
+        - analyze-sprint-risk
+        - explain-issue-risk
+        - get-assignee-load
+        - list-sprints
+        - get-risk-trend
+        - add-risk-comment
+        - add-risk-label
+        - create-followup-subtask
+        - flag-issue
+        - publish-risk-report
+
+  action:
+    # ----- read-only -----
+    - key: analyze-sprint-risk
+      name: Analyze sprint risk
+      function: fn-analyze-sprint-risk
+      actionVerb: GET
+      description: >
+        Read-only. Analyses a Jira Scrum sprint (default: the project's active sprint) and returns the
+        sprint risk score (0-100, higher is riskier), health score, band, confidence with reasons, score
+        breakdown, sprint metrics, the top findings (blocked work, blocker chains, circular dependencies,
+        stale work, overdue or due-soon work, missing acceptance criteria, unanswered questions, scope
+        creep, overloaded or unassigned work) each with evidence and suggested actions, the riskiest
+        issues and the trend since the previous run.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: Jira project key, e.g. DEMO. Optional when invoked inside a Jira project or issue.
+        sprintId:
+          title: Sprint ID
+          type: integer
+          required: false
+          description: Numeric sprint id from list-sprints. Omit to analyse the active sprint.
+    - key: explain-issue-risk
+      name: Explain issue risk
+      function: fn-explain-issue-risk
+      actionVerb: GET
+      description: >
+        Read-only. Explains the risk score (0-100) of one Jira issue within its sprint: every signal with
+        its evidence, related findings and the issue's rank within the sprint.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: false
+          description: Jira issue key, e.g. DEMO-12. Optional when invoked on an issue.
+        sprintId:
+          title: Sprint ID
+          type: integer
+          required: false
+          description: Optional sprint id; defaults to the issue's active sprint.
+    - key: get-assignee-load
+      name: Get assignee load
+      function: fn-get-assignee-load
+      actionVerb: GET
+      description: >
+        Read-only. Returns per-person load for a sprint (open issues, in-progress count, remaining and done
+        story points), who is overloaded and why, plus Atlassian Teamwork Graph context (teams, unresolved
+        work assigned elsewhere) when available.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: Jira project key, e.g. DEMO.
+        sprintId:
+          title: Sprint ID
+          type: integer
+          required: false
+          description: Optional sprint id; defaults to the active sprint.
+    - key: list-sprints
+      name: List sprints
+      function: fn-list-sprints
+      actionVerb: GET
+      description: Read-only. Lists the active, future and closed sprints of a Jira project's Scrum boards with ids, dates and goals.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: Jira project key, e.g. DEMO.
+    - key: get-risk-trend
+      name: Get risk trend
+      function: fn-get-risk-trend
+      actionVerb: GET
+      description: >
+        Read-only. Compares the sprint's current risk with the previous recorded run: risk delta, direction,
+        issues newly at risk or no longer at risk, finding-count changes and the history of runs.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: Jira project key, e.g. DEMO.
+        sprintId:
+          title: Sprint ID
+          type: integer
+          required: false
+          description: Optional sprint id; defaults to the active sprint.
+    # ----- write (two-phase: preview + confirmation token) -----
+    - key: add-risk-comment
+      name: Add risk comment
+      function: fn-add-risk-comment
+      actionVerb: CREATE
+      description: >
+        Adds a comment to a Jira issue. Two-phase: call without confirmationToken to get a preview and a token
+        (nothing is written); after the user explicitly confirms, call again with the same inputs plus the token.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: Jira issue key to comment on, e.g. DEMO-12.
+        comment:
+          title: Comment
+          type: string
+          required: true
+          description: The comment text. Cite the evidence (issue keys, dates) behind the risk.
+        confirmationToken:
+          title: Confirmation token
+          type: string
+          required: false
+          description: Token returned by the preview call. Only send it after the user explicitly confirmed.
+    - key: add-risk-label
+      name: Add risk label
+      function: fn-add-risk-label
+      actionVerb: UPDATE
+      description: >
+        Adds a label (default sentinel-at-risk) to a Jira issue. Two-phase: preview first, then repeat with the
+        confirmationToken only after the user explicitly confirms.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: Jira issue key, e.g. DEMO-12.
+        label:
+          title: Label
+          type: string
+          required: false
+          description: Label without spaces, e.g. sentinel-at-risk, sentinel-dependency or sentinel-scope-creep.
+        confirmationToken:
+          title: Confirmation token
+          type: string
+          required: false
+          description: Token returned by the preview call. Only send it after the user explicitly confirmed.
+    - key: create-followup-subtask
+      name: Create follow-up sub-task
+      function: fn-create-subtask
+      actionVerb: CREATE
+      description: >
+        Creates a follow-up sub-task under a Jira issue (e.g. "Define acceptance criteria"). Two-phase: preview
+        first, then repeat with the confirmationToken only after the user explicitly confirms.
+      inputs:
+        parentKey:
+          title: Parent issue key
+          type: string
+          required: true
+          description: The issue to create the sub-task under, e.g. DEMO-12.
+        summary:
+          title: Summary
+          type: string
+          required: true
+          description: Sub-task summary.
+        description:
+          title: Description
+          type: string
+          required: false
+          description: Optional sub-task description.
+        confirmationToken:
+          title: Confirmation token
+          type: string
+          required: false
+          description: Token returned by the preview call. Only send it after the user explicitly confirmed.
+    - key: flag-issue
+      name: Flag issue
+      function: fn-flag-issue
+      actionVerb: UPDATE
+      description: >
+        Flags a Jira issue as an impediment and optionally comments the reason. Two-phase: preview first, then
+        repeat with the confirmationToken only after the user explicitly confirms.
+      inputs:
+        issueKey:
+          title: Issue key
+          type: string
+          required: true
+          description: Jira issue key, e.g. DEMO-12.
+        reason:
+          title: Reason
+          type: string
+          required: false
+          description: Why the issue is blocked; posted as a comment.
+        confirmationToken:
+          title: Confirmation token
+          type: string
+          required: false
+          description: Token returned by the preview call. Only send it after the user explicitly confirmed.
+    - key: publish-risk-report
+      name: Publish Sprint Risk Report
+      function: fn-publish-risk-report
+      actionVerb: CREATE
+      description: >
+        Publishes a "Sprint Risk Report" Confluence page (score, breakdown, top-risk table, findings, assignee
+        load, confidence and trend vs the last run). Two-phase: preview first, then repeat with the
+        confirmationToken only after the user explicitly confirms.
+      inputs:
+        projectKey:
+          title: Project key
+          type: string
+          required: false
+          description: Jira project key, e.g. DEMO.
+        spaceKey:
+          title: Confluence space key
+          type: string
+          required: false
+          description: Key of the Confluence space to publish in. Optional if a report was published before.
+        sprintId:
+          title: Sprint ID
+          type: integer
+          required: false
+          description: Optional sprint id; defaults to the active sprint.
+        parentPageId:
+          title: Parent page ID
+          type: string
+          required: false
+          description: Optional numeric id of a parent Confluence page.
+        confirmationToken:
+          title: Confirmation token
+          type: string
+          required: false
+          description: Token returned by the preview call. Only send it after the user explicitly confirmed.
+
+  # ---------------------------------------------------------------------------
+  # Jira UI (Custom UI): project dashboard + issue panel; Confluence overview page
+  # ---------------------------------------------------------------------------
+  jira:projectPage:
+    - key: sprint-sentinel-project-page
+      resource: main
+      resolver:
+        function: resolver
+      title: Sprint Sentinel
+      icon: resource:main;sentinel.svg
+  jira:issuePanel:
+    - key: sprint-sentinel-issue-panel
+      resource: main
+      resolver:
+        function: resolver
+      title: Sprint risk
+      icon: resource:main;sentinel.svg
+  confluence:globalPage:
+    - key: sprint-sentinel-confluence-page
+      resource: main
+      resolver:
+        function: resolver
+      title: Sprint Sentinel
+      route: sprint-sentinel
+      icon: resource:main;sentinel.svg
+
+  scheduledTrigger:
+    - key: daily-risk-snapshot
+      function: fn-daily-snapshot
+      interval: day
+
+  function:
+    - key: resolver
+      handler: index.handler
+    - key: fn-analyze-sprint-risk
+      handler: index.analyzeSprintRisk
+    - key: fn-explain-issue-risk
+      handler: index.explainIssueRisk
+    - key: fn-get-assignee-load
+      handler: index.getAssigneeLoad
+    - key: fn-list-sprints
+      handler: index.listSprints
+    - key: fn-get-risk-trend
+      handler: index.getRiskTrend
+    - key: fn-add-risk-comment
+      handler: index.addRiskComment
+    - key: fn-add-risk-label
+      handler: index.addRiskLabel
+    - key: fn-create-subtask
+      handler: index.createFollowupSubtask
+    - key: fn-flag-issue
+      handler: index.flagIssue
+    - key: fn-publish-risk-report
+      handler: index.publishRiskReport
+    - key: fn-daily-snapshot
+      handler: index.dailySnapshot
+      timeoutSeconds: 300
+
+resources:
+  - key: main
+    path: static/app/build
+  - key: agent-prompt
+    path: resources/agent
+
+permissions:
+  scopes:
+    # Jira platform: read issues/comments/links, write comments/labels/flags/sub-tasks
+    - read:jira-work
+    - write:jira-work
+    - read:jira-user
+    # Jira Software (Agile): boards and sprints; write only used by the demo seeder
+    - read:board-scope:jira-software
+    - read:sprint:jira-software
+    - write:sprint:jira-software
+    - read:project:jira
+    # Confluence (optional product): publish Sprint Risk Reports
+    - read:space:confluence
+    - read:page:confluence
+    - write:page:confluence
+    # Teamwork Graph (curated queries): teams and cross-project assigned work
+    - read:graph:user:atlassian
+    - read:graph:team:atlassian
+    - read:graph:issue:jira
+    # Forge storage: settings, snapshots (trend), confirmation tokens
+    - storage:app
+  content:
+    styles:
+      - unsafe-inline
+
+app:
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
+  runtime:
+    name: nodejs22.x
+  compatibility:
+    jira:
+      required: true
+    confluence:
+      required: false
