@@ -1,0 +1,42 @@
+{
+  "name": "sprint-sentinel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sprint Sentinel — a Rovo-powered, explainable delivery-risk copilot for Jira and Confluence, built on Atlassian Forge.",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json && npm --prefix static/app run typecheck",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "build:ui": "npm --prefix static/app run build",
+    "install:ui": "npm --prefix static/app install",
+    "seed": "tsx scripts/seed-demo.ts",
+    "check": "npm run lint && npm run typecheck && npm run test:coverage",
+    "forge:lint": "forge lint",
+    "deploy": "npm run build:ui && forge deploy -e production",
+    "screenshots": "npm run build:ui && node scripts/screenshots.mjs"
+  },
+  "dependencies": {
+    "@forge/api": "^8.5.0",
+    "@forge/kvs": "^2.1.2",
+    "@forge/resolver": "^2.0.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^5.1.0",
+    "eslint": "^10.14.0",
+    "globals": "^16.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}
