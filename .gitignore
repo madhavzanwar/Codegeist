@@ -8,3 +8,4 @@ dist/
 *.log
 .DS_Store
 .forge/
+static/app/build-mock/

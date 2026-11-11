@@ -23,6 +23,7 @@ const k = {
   cache: (p: string, s: number) => `cache:${p}:${s}`,
   seed: (p: string) => `seed:${p}`,
   lastReport: (p: string) => `last-report:${p}`,
+  latestSprint: (p: string) => `latest-sprint:${p}`,
 };
 
 export const keys = k;
@@ -44,7 +45,38 @@ export async function getSnapshots(kv: KV, projectKey: string, sprintId: number)
 export async function recordSnapshot(kv: KV, projectKey: string, snap: Snapshot): Promise<Snapshot[]> {
   const next = appendSnapshot(await getSnapshots(kv, projectKey, snap.sprintId), snap);
   await kv.set(k.snapshots(projectKey, snap.sprintId), next);
+  await kv.set(k.latestSprint(projectKey), snap.sprintId);
   return next;
+}
+
+export interface ProjectOverview {
+  projectKey: string;
+  sprintName: string;
+  riskScore: number | null;
+  healthScore: number | null;
+  at: string;
+  history: Array<{ at: string; riskScore: number | null }>;
+}
+
+/** Latest snapshot + history for every watched project (Confluence portfolio page). */
+export async function projectOverview(kv: KV): Promise<ProjectOverview[]> {
+  const out: ProjectOverview[] = [];
+  for (const projectKey of await watchedProjects(kv)) {
+    const sprintId = await kv.get<number>(k.latestSprint(projectKey));
+    if (sprintId === undefined) continue;
+    const snaps = await getSnapshots(kv, projectKey, sprintId);
+    const last = snaps[snaps.length - 1];
+    if (!last) continue;
+    out.push({
+      projectKey,
+      sprintName: last.sprintName,
+      riskScore: last.riskScore,
+      healthScore: last.healthScore,
+      at: last.at,
+      history: snaps.slice(-14).map((s) => ({ at: s.at, riskScore: s.riskScore })),
+    });
+  }
+  return out.sort((a, b) => (b.riskScore ?? -1) - (a.riskScore ?? -1));
 }
 
 export async function watchProject(kv: KV, projectKey: string): Promise<void> {

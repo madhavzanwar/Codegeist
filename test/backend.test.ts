@@ -127,7 +127,7 @@ describe('sprint resolution and analysis', () => {
     expect(out.result?.findings.some((f) => f.kind === 'scope_creep')).toBe(true);
     expect(await watchedProjects(d.kv)).toEqual(['DEMO']);
     expect(await getCachedResult(d.kv, 'DEMO', 5, NOW.getTime(), 1000)).not.toBeNull();
-    expect(d.jira.calls.find((c) => c.path === '/rest/api/3/search/jql')?.body).toMatchObject({ jql: 'sprint = 5 ORDER BY rank ASC', expand: 'changelog' });
+    expect((d.jira as ReturnType<typeof fakeRequester>).calls.find((c) => c.path === '/rest/api/3/search/jql')?.body).toMatchObject({ jql: 'sprint = 5 ORDER BY rank ASC', expand: 'changelog' });
   });
   it('reports missing projects and sprints instead of inventing data', async () => {
     expect((await runAnalysis(deps(), 'NOPE')).message).toContain('not found');
@@ -297,6 +297,8 @@ describe('resolvers', () => {
     const op = await r.operation({ payload: { op: 'add-risk-label', args: { issueKey: 'DEMO-1' } }, context: ctx });
     expect(op.status).toBe('confirmation_required');
     expect(await r.seedStatus({ payload: {}, context: ctx })).toBeNull();
+    const ov = await r.getOverview();
+    expect(ov.projects[0]).toMatchObject({ projectKey: 'DEMO', sprintName: 'Sprint 5' });
   });
 
   it('reports Confluence as unavailable when the app is not connected', async () => {

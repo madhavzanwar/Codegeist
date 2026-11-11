@@ -45,7 +45,7 @@ describe('report', () => {
   });
   it('renders a storage-format page with table, trend and evidence', () => {
     const result = analyzeSprint(input([
-      issue({ key: 'D-1', summary: 'Pay <now>', dueDate: '2026-11-18', storyPoints: 20 }),
+      issue({ key: 'D-1', summary: 'Pay <now>', dueDate: '2026-11-18', storyPoints: 25 }),
       issue({ key: 'D-2', statusCategory: 'done', storyPoints: 1 }),
     ]));
     const prev = snap('2026-11-19T00:00:00Z', 10, {});

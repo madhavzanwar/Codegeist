@@ -90,7 +90,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   staleAfterHours: 72,
-  maxPointsPerPerson: 13,
+  maxPointsPerPerson: 20,
   maxWipPerPerson: 3,
   unansweredQuestionHours: 24,
 };

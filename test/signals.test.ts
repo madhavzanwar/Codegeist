@@ -202,7 +202,7 @@ describe('detectUnassigned', () => {
 describe('assignee load', () => {
   it('flags people over the points or WIP limit', () => {
     const issues = [
-      issue({ key: 'D-1', assignee: alice, storyPoints: 8, statusCategory: 'indeterminate' }),
+      issue({ key: 'D-1', assignee: alice, storyPoints: 13, statusCategory: 'indeterminate' }),
       issue({ key: 'D-2', assignee: alice, storyPoints: 8 }),
       issue({ key: 'D-3', assignee: bob, storyPoints: 3 }),
       issue({ key: 'D-4', assignee: bob, storyPoints: 5, statusCategory: 'done' }),
@@ -211,7 +211,8 @@ describe('assignee load', () => {
     const loads = computeAssigneeLoad(issues, DEFAULT_SETTINGS);
     const a = loads.find((l) => l.accountId === 'a-1');
     expect(a?.overloaded).toBe(true);
-    expect(a?.reasons[0]).toContain('16 remaining story points');
+    expect(a?.reasons[0]).toContain('21 remaining story points');
+    expect(detectOverload(issues[0] as IssueRecord, loads)).toEqual([]); // in progress: not re-balanceable
     const b = loads.find((l) => l.accountId === 'b-2');
     expect(b?.overloaded).toBe(false);
     expect(b?.donePoints).toBe(5);
@@ -235,7 +236,7 @@ describe('assignee load', () => {
     const a = loads.find((l) => l.accountId === 'a-1');
     expect(a?.teams).toEqual(['Payments']);
     expect(a?.reasons[0]).toContain('25+ more unresolved work items');
-    const sig = detectOverload(many[0] as IssueRecord, loads);
+    const sig = detectOverload(many[4] as IssueRecord, loads);
     expect(sig[0]?.confidence).toBe('medium');
   });
 });

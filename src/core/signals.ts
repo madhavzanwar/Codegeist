@@ -328,8 +328,9 @@ export function computeAssigneeLoad(issues: IssueRecord[], settings: Settings, g
   return [...map.values()].sort((a, b) => b.remainingPoints - a.remainingPoints || b.openIssues - a.openIssues);
 }
 
+/** Attached only to not-yet-started work: that is what can realistically be re-balanced. */
 export function detectOverload(issue: IssueRecord, loads: AssigneeLoad[]): Signal[] {
-  if (isDone(issue) || !issue.assignee) return [];
+  if (issue.statusCategory !== 'new' || !issue.assignee) return [];
   const load = loads.find((l) => l.accountId === issue.assignee?.accountId);
   if (!load?.overloaded) return [];
   return [

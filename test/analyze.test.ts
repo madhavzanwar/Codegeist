@@ -69,7 +69,7 @@ describe('analyzeSprint', () => {
   });
 
   it('reports overloaded people as findings', () => {
-    const r = analyzeSprint(input([...demoIssues(), issue({ key: 'D-7', assignee: alice, storyPoints: 8 })]));
+    const r = analyzeSprint(input([...demoIssues(), issue({ key: 'D-7', assignee: alice, storyPoints: 13 })]));
     const f = r.findings.find((x) => x.kind === 'overloaded_assignee');
     expect(f?.title).toBe('Alice is overloaded');
     expect(f?.suggestedActions[0]?.issueKey).toBeDefined();

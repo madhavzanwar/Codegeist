@@ -10,7 +10,7 @@ import type { SeedState } from '../seed/executor';
 import type { Deps } from '../service';
 import { cachedFieldMap, runAnalysis } from '../service';
 import type { ProjectSettings } from '../storage/store';
-import { getCachedResult, keys, saveSettings } from '../storage/store';
+import { getCachedResult, keys, projectOverview, saveSettings } from '../storage/store';
 
 /** Custom UI resolver functions (dashboard + issue panel). */
 
@@ -81,6 +81,10 @@ export function makeResolvers(env: ResolverEnv) {
       if (q !== undefined) patch.unansweredQuestionHours = q;
       if (typeof payload.reportSpaceKey === 'string') patch.reportSpaceKey = payload.reportSpaceKey.trim().slice(0, 255);
       return saveSettings(env.deps().kv, projectKey, patch);
+    },
+
+    async getOverview() {
+      return { projects: await projectOverview(env.deps().kv) };
     },
 
     async listSpaces() {

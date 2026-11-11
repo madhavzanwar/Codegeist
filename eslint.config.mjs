@@ -4,7 +4,7 @@ import globals from 'globals';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', 'static/app/node_modules/**', 'static/app/build/**', 'coverage/**', 'dist/**', '.forge/**'],
+    ignores: ['node_modules/**', 'static/app/node_modules/**', 'static/app/build/**', 'static/app/build-mock/**', 'docs/**', 'coverage/**', 'dist/**', '.forge/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
